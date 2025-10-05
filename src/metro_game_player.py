@@ -96,9 +96,9 @@ class MetroGamePlayer:
 
         return {"valid_guess": True, "guess_number": self.guess_count, **result}
 
-    def get_remaining_station_names(self) -> List[str]:
-        """Get names of all remaining possible stations."""
-        return [station["name"] for station in self.remaining_stations]
+    # def get_remaining_station_names(self) -> List[str]:
+    #     """Get names of all remaining possible stations."""
+    #     return [station["name"] for station in self.remaining_stations]
 
     def play_interactive(self) -> None:
         """Start an interactive game session."""

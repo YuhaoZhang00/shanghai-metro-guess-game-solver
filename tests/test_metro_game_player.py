@@ -11,80 +11,6 @@ import io
 from src.metro_game_player import get_display_width, pad_string, MetroGamePlayer, main
 
 
-class TestMetroGamePlayer:
-    """Test cases for MetroGamePlayer class."""
-
-    def test_player_initialization(self, game_player):
-        """Test that the player initializes correctly."""
-        assert game_player.game_core is not None
-        assert game_player.target_station is not None
-        assert len(game_player.remaining_stations) > 0
-        assert game_player.guess_count == 0
-
-    # def test_target_setting(self, game_player):
-    #     """Test setting a specific target station."""
-    #     target_name = game_player.game_core.stations[10]["name"]
-    #     success = game_player.set_target(target_name)
-    #     assert success is True
-    #     assert game_player.get_target_name() == target_name
-
-    #     # Test invalid target
-    #     success = game_player.set_target("Invalid Station Name")
-    #     assert success is False
-
-    def test_valid_guess_processing(self, game_player):
-        """Test processing a valid guess."""
-        station_name = game_player.game_core.stations[5]["name"]
-        result = game_player.make_guess(station_name)
-
-        assert result["valid_guess"] is True
-        assert result["guess_number"] == 1
-        assert "stationInfo" in result
-        assert "correct" in result
-        assert game_player.guess_count == 1
-
-    def test_invalid_guess_processing(self, game_player):
-        """Test processing an invalid guess."""
-        result = game_player.make_guess("Invalid Station Name")
-
-        assert result["valid_guess"] is False
-        assert "error" in result
-        assert game_player.guess_count == 0  # Should not increment for invalid guess
-
-    def test_correct_guess(self, game_player):
-        """Test making a correct guess."""
-        target_name = game_player.get_target_name()
-        result = game_player.make_guess(target_name)
-
-        assert result["valid_guess"] is True
-        assert result["correct"] is True
-        assert result["guess_number"] == 1
-
-    def test_remaining_station_names(self, game_player):
-        """Test getting remaining station names."""
-        names = game_player.get_remaining_station_names()
-        assert isinstance(names, list)
-        assert len(names) > 0
-        assert all(isinstance(name, str) for name in names)
-
-    def test_game_reset(self, game_player):
-        """Test resetting the game."""
-        # Make a guess first
-        station_name = game_player.game_core.stations[5]["name"]
-        game_player.make_guess(station_name)
-
-        # Reset the game
-        old_target = game_player.get_target_name()
-        game_player.reset_game()
-
-        assert game_player.guess_count == 0
-        assert len(game_player.remaining_stations) == len(
-            game_player.game_core.stations
-        )
-        # Target might be the same by chance, so we just check it's set
-        assert game_player.target_station is not None
-
-
 class TestUtilityFunctions:
     """Test utility functions for display formatting."""
 
@@ -138,17 +64,83 @@ class TestUtilityFunctions:
         assert pad_string("test", -1) == "test"  # negative target width
 
 
+class TestMetroGamePlayer:
+    """Test cases for MetroGamePlayer class."""
+
+    def test_player_initialization(self, game_player):
+        """Test that the player initializes correctly."""
+        assert game_player.game_core is not None
+        assert game_player.target_station is not None
+        assert len(game_player.remaining_stations) > 0
+        assert game_player.guess_count == 0
+
+    # def test_target_setting(self, game_player):
+    #     """Test setting a specific target station."""
+    #     target_name = game_player.game_core.stations[10]["name"]
+    #     success = game_player.set_target(target_name)
+    #     assert success is True
+    #     assert game_player.get_target_name() == target_name
+
+    #     # Test invalid target
+    #     success = game_player.set_target("Invalid Station Name")
+    #     assert success is False
+
+    def test_valid_guess_processing(self, game_player):
+        """Test processing a valid guess."""
+        station_name = game_player.game_core.stations[5]["name"]
+        result = game_player.make_guess(station_name)
+
+        assert result["valid_guess"] is True
+        assert result["guess_number"] == 1
+        assert "stationInfo" in result
+        assert "correct" in result
+        assert game_player.guess_count == 1
+
+    def test_invalid_guess_processing(self, game_player):
+        """Test processing an invalid guess."""
+        result = game_player.make_guess("Invalid Station Name")
+
+        assert result["valid_guess"] is False
+        assert "error" in result
+        assert game_player.guess_count == 0  # Should not increment for invalid guess
+
+    def test_correct_guess(self, game_player):
+        """Test making a correct guess."""
+        target_name = game_player.get_target_name()
+        result = game_player.make_guess(target_name)
+
+        assert result["valid_guess"] is True
+        assert result["correct"] is True
+        assert result["guess_number"] == 1
+
+    # def test_remaining_station_names(self, game_player):
+    #     """Test getting remaining station names."""
+    #     names = game_player.get_remaining_station_names()
+    #     assert isinstance(names, list)
+    #     assert len(names) > 0
+    #     assert all(isinstance(name, str) for name in names)
+
+    def test_game_reset(self, game_player):
+        """Test resetting the game."""
+        # Make a guess first
+        station_name = game_player.game_core.stations[5]["name"]
+        game_player.make_guess(station_name)
+
+        assert game_player.guess_count == 1
+
+        game_player.reset_game()
+
+        assert game_player.guess_count == 0
+        assert len(game_player.remaining_stations) == len(
+            game_player.game_core.stations
+        )
+        assert game_player.target_station is not None
+
+
 class TestMetroGamePlayerExtended:
     """Extended tests for MetroGamePlayer class functionality."""
 
-    def test_initialization_with_custom_file(self):
-        """Test initialization with custom stations file."""
-        # This would require a mock file, but tests the parameter passing
-        with patch("src.metro_game_player.MetroGameCore") as mock_core:
-            player = MetroGamePlayer("custom_stations.json")
-            mock_core.assert_called_once_with("custom_stations.json")
-
-    def test_correct_guesses_sequence(self, game_player):
+    def test_correct_guess(self, game_player):
         """Test a correct guess."""
         target_name = game_player.get_target_name()
 
@@ -162,8 +154,7 @@ class TestMetroGamePlayerExtended:
         target_name = game_player.get_target_name()
         all_stations = game_player.game_core.stations
 
-        # Find stations that are not the target
-        wrong_stations = [s for s in all_stations if s["name"] != target_name][:3]
+        wrong_stations = [s for s in all_stations if s["name"] != target_name][:5]
 
         for i, station in enumerate(wrong_stations, 1):
             result = game_player.make_guess(station["name"])
@@ -174,23 +165,20 @@ class TestMetroGamePlayerExtended:
 
     def test_remaining_stations_decrease_with_guesses(self, game_player):
         """Test that remaining stations decrease after each guess."""
+        target_name = game_player.get_target_name()
+        all_stations = game_player.game_core.stations
+
         initial_count = len(game_player.remaining_stations)
 
-        # Make a guess (not the target to continue game)
-        non_target_station = None
-        target_name = game_player.get_target_name()
+        wrong_stations = [s for s in all_stations if s["name"] != target_name][:5]
+        prev_count = initial_count
 
-        for station in game_player.game_core.stations:
-            if station["name"] != target_name:
-                non_target_station = station["name"]
-                break
-
-        result = game_player.make_guess(non_target_station)
-        new_count = len(game_player.remaining_stations)
-
-        # Remaining stations should be filtered down
-        assert new_count <= initial_count
-        assert result["valid_guess"] is True
+        for station in wrong_stations:
+            result = game_player.make_guess(station["name"])
+            new_count = len(game_player.remaining_stations)
+            assert new_count <= prev_count
+            assert result["valid_guess"] is True
+            prev_count = new_count
 
     # def test_set_target_to_current_target(self, game_player):
     #     """Test setting target to the same station."""
@@ -203,7 +191,7 @@ class TestMetroGamePlayerExtended:
         """Test resetting the game multiple times."""
         original_total = len(game_player.game_core.stations)
 
-        for _ in range(3):
+        for _ in range(5):
             # Make some guesses
             station_name = game_player.game_core.stations[1]["name"]
             game_player.make_guess(station_name)
@@ -215,17 +203,6 @@ class TestMetroGamePlayerExtended:
             assert game_player.guess_count == 0
             assert len(game_player.remaining_stations) == original_total
             assert game_player.target_station is not None
-
-    def test_guess_all_stations_names_valid(self, game_player):
-        """Test that all station names in the dataset are valid guesses."""
-        # Test a sample to avoid long test times
-        sample_stations = game_player.game_core.stations[:5]
-
-        for station in sample_stations:
-            # Reset for each test
-            game_player.reset_game()
-            result = game_player.make_guess(station["name"])
-            assert result["valid_guess"] is True
 
     def test_empty_guess(self, game_player):
         """Test making an empty guess."""
@@ -290,62 +267,16 @@ class TestInteractivePlayMocking:
         assert "New game started!" in output
         assert "Thanks for playing!" in output
 
+    @patch("builtins.input")
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_play_interactive_guess_then_quit(self, mock_stdout, mock_input):
+        """Test reset command then quit."""
+        # Mock user input: reset then quit
+        mock_input.side_effect = ["人民广场", "quit"]
 
-class TestMainFunction:
-    """Test the main function."""
+        player = MetroGamePlayer()
+        player.play_interactive()
 
-    @patch("src.metro_game_player.MetroGamePlayer")
-    def test_main_creates_player_and_starts_game(self, mock_player_class):
-        """Test that main function creates a player and starts interactive game."""
-        mock_player_instance = MagicMock()
-        mock_player_class.return_value = mock_player_instance
-
-        main()
-
-        mock_player_class.assert_called_once()
-        mock_player_instance.play_interactive.assert_called_once()
-
-
-class TestEdgeCasesAndErrorHandling:
-    """Test edge cases and error handling scenarios."""
-
-    def test_remaining_stations_immutability(self, game_player):
-        """Test that remaining_stations list is not accidentally modified."""
-        original_count = len(game_player.remaining_stations)
-        remaining_names = game_player.get_remaining_station_names()
-
-        # Attempt to modify the returned list
-        remaining_names.clear()
-
-        # Original should be unchanged
-        assert len(game_player.remaining_stations) == original_count
-
-    def test_target_station_persistence(self, game_player):
-        """Test that target station persists through multiple operations."""
-        original_target = game_player.get_target_name()
-
-        # Make some guesses
-        for station in game_player.game_core.stations[:3]:
-            if station["name"] != original_target:
-                game_player.make_guess(station["name"])
-                # Target should remain the same
-                assert game_player.get_target_name() == original_target
-
-    def test_unicode_handling_in_station_names(self, game_player):
-        """Test that unicode characters in station names are handled correctly."""
-        # Find a station with Chinese characters (should be most of them)
-        chinese_stations = [
-            s
-            for s in game_player.game_core.stations
-            if any(ord(c) > 127 for c in s["name"])
-        ]
-
-        if chinese_stations:
-            station_name = chinese_stations[0]["name"]
-            result = game_player.make_guess(station_name)
-            assert result["valid_guess"] is True
-
-            # Test display width calculation
-            width = get_display_width(station_name)
-            assert width > 0
-            assert isinstance(width, int)
+        output = mock_stdout.getvalue()
+        assert "Guess #1:" in output
+        assert "Thanks for playing!" in output

@@ -9,5 +9,5 @@ A Python implementation and solver for the Shanghai Metro guessing game (猜铁�
 
 ## Original Game
 
-- Play online: https://xiaoce.fun/metro/shanghai
-- Original implementation: https://github.com/BobLiu0518/ShanghaiMetroGuessGame
+- Play online (猜盐): https://xiaoce.fun/metro/shanghai
+- Partial implementation copied from: https://github.com/BobLiu0518/ShanghaiMetroGuessGame

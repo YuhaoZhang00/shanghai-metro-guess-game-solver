@@ -17,9 +17,3 @@ def game_core():
 def game_player():
     """Create a fresh MetroGamePlayer instance for each test."""
     return MetroGamePlayer()
-
-
-@pytest.fixture
-def sample_stations(game_core):
-    """Get a sample of stations for testing."""
-    return game_core.stations[:10]

@@ -39,22 +39,14 @@ def get_display_width(text: str) -> int:
     return width
 
 
-def pad_string(text: str, target_width: int, align: str = "left") -> str:
+def pad_string(text: str, target_width: int) -> str:
     """Pad a string to target display width, accounting for wide characters."""
     current_width = get_display_width(text)
     if current_width >= target_width:
         return text
 
     padding = target_width - current_width
-    if align == "left":
-        return text + " " * padding
-    elif align == "right":
-        return " " * padding + text
-    elif align == "center":
-        left_pad = padding // 2
-        right_pad = padding - left_pad
-        return " " * left_pad + text + " " * right_pad
-    return text
+    return text + " " * padding
 
 
 class MetroGamePlayer:
@@ -74,15 +66,15 @@ class MetroGamePlayer:
         self.remaining_stations = self.game_core.stations.copy()
         self.guess_count = 0
 
-    def set_target(self, station_name: str) -> bool:
-        """Set a specific station as the target."""
-        station = self.game_core.get_station_by_name(station_name)
-        if station:
-            self.target_station = station
-            self.remaining_stations = self.game_core.stations.copy()
-            self.guess_count = 0
-            return True
-        return False
+    # def set_target(self, station_name: str) -> bool:
+    #     """Set a specific station as the target."""
+    #     station = self.game_core.get_station_by_name(station_name)
+    #     if station:
+    #         self.target_station = station
+    #         self.remaining_stations = self.game_core.stations.copy()
+    #         self.guess_count = 0
+    #         return True
+    #     return False
 
     def get_target_name(self) -> str:
         """Get the name of the target station."""
@@ -104,18 +96,6 @@ class MetroGamePlayer:
 
         return {"valid_guess": True, "guess_number": self.guess_count, **result}
 
-    def get_game_stats(self) -> dict:
-        """Get current game statistics."""
-        return {
-            "target": self.target_station["name"],
-            "total_stations": len(self.game_core.stations),
-            "remaining_stations": len(self.remaining_stations),
-            "guess_count": self.guess_count,
-            "game_won": self.guess_count > 0
-            and len(self.remaining_stations) == 1
-            and self.remaining_stations[0] == self.target_station,
-        }
-
     def get_remaining_station_names(self) -> List[str]:
         """Get names of all remaining possible stations."""
         return [station["name"] for station in self.remaining_stations]
@@ -129,7 +109,6 @@ class MetroGamePlayer:
 
         while True:
             remaining_count = len(self.remaining_stations)
-            print()
             print("========================================")
             print(f"Remaining possible stations: {remaining_count}")
 
@@ -187,11 +166,9 @@ class MetroGamePlayer:
                 district_padded = pad_string(station_info["district"], 11)
                 lines_padded = pad_string(lines_str, 38)
                 year_padded = pad_string(str(station_info["year"]), 7)
-                # Pad emoji results
                 district_emoji_padded = pad_string(district_emoji, 11)
                 line_emoji_padded = pad_string(line_emoji[result["line"]], 38)
                 year_emoji_padded = pad_string(year_emoji, 8)
-                # Pad distance information
                 min_stations_padded = pad_string(str(result["minStations"]), 15)
                 min_transfer_padded = pad_string(str(result["minTransfer"]), 16)
 
@@ -224,11 +201,16 @@ class MetroGamePlayer:
                 print("└─────────────────┴──────────────────┘")
 
                 # Remaining stations count and list
-                print(f"🎯 Remaining: {len(result['remain'])} stations")
+                print(f"🎯 Remaining (attributes): {len(result['remain'])} stations")
 
                 if len(result["remain"]) <= 10:
                     remaining_names = [s["name"] for s in result["remain"]]
                     print(f"   {', '.join(remaining_names)}")
+
+                # TODO: functionalities could be added
+                # 1. list all the possible attribute values to try
+                # 2. strict remaining which also counts into min stations and min transfers
+                # 3. Suggest next best guess based on remaining stations
 
 
 def main():

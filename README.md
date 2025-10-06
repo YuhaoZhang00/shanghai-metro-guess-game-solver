@@ -14,5 +14,4 @@ A Python implementation and solver for the Shanghai Metro guessing game (猜铁�
 
 ## TODO
 
-- player test cases
 - solver

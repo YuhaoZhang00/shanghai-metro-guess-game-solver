@@ -28,7 +28,7 @@ class TestMetroGameCore:
             assert isinstance(station["name"], str)
             assert isinstance(station["line"], list)
             assert isinstance(station["nearStation"], list)
-            assert isinstance(station["district"], str)
+            assert isinstance(station["district"], list)
             assert isinstance(station["year"], int)
 
     def test_station_lookup_by_name(self, game_core):
@@ -37,7 +37,7 @@ class TestMetroGameCore:
         assert found_station["id"] == 2180
         assert found_station["name"] == "人民广场"
         assert found_station["line"] == ["8号线", "1号线", "2号线"]
-        assert found_station["district"] == "黄浦区"
+        assert found_station["district"] == ["黄浦区"]
         assert found_station["nearStation"] == [2489, 1985, 2248, 2351, 2384, 2322]
         assert found_station["year"] == 1995
 
@@ -52,7 +52,7 @@ class TestMetroGameCore:
         assert found_station["id"] == 2180
         assert found_station["name"] == "人民广场"
         assert found_station["line"] == ["8号线", "1号线", "2号线"]
-        assert found_station["district"] == "黄浦区"
+        assert found_station["district"] == ["黄浦区"]
         assert found_station["nearStation"] == [2489, 1985, 2248, 2351, 2384, 2322]
         assert found_station["year"] == 1995
 
@@ -146,39 +146,72 @@ class TestMetroGameCore:
 
         assert game_core.get_min_transfer(station11, station12) == 0
 
+    def test_district_preprocessing(self, game_core):
+        """Test that district preprocessing correctly splits comma-separated districts."""
+        # Test station with English comma separation
+        wuzhong_station = game_core.get_station_by_name("吴中路")
+        assert wuzhong_station is not None
+        assert len(wuzhong_station["district"]) == 2
+        assert "徐汇区" in wuzhong_station["district"]
+        assert "闵行区" in wuzhong_station["district"]
+
+        # Test station with Chinese comma (should NOT be split, remains as single district)
+        wuning_station = game_core.get_station_by_name("武宁路")
+        assert wuning_station is not None
+        assert len(wuning_station["district"]) == 1
+        assert wuning_station["district"][0] == "普陀区，静安区"
+
     def test_attribute_difference(self, game_core):
         """Test attribute difference calculation."""
         station1 = game_core.get_station_by_name("航头")
         station2 = game_core.get_station_by_name("下沙")
 
         diff1 = game_core.get_attribute_difference(station1, station1)
-        assert diff1["district"] == True
+        assert diff1["district"] == "every"
         assert diff1["line"] == "every"
         assert diff1["year"] == 0
         diff2 = game_core.get_attribute_difference(station1, station2)
-        assert diff2["district"] == True
+        assert diff2["district"] == "every"
         assert diff2["line"] == "every"
         assert diff2["year"] == 0
 
         station3 = game_core.get_station_by_name("浦东南路（2号线）")
         station4 = game_core.get_station_by_name("浦东南路（14号线）")
         diff3 = game_core.get_attribute_difference(station3, station4)
-        assert diff3["district"] == True
+        assert diff3["district"] == "every"
         assert diff3["line"] == "none"
         assert diff3["year"] == -1
 
         station5 = game_core.get_station_by_name("丹阳路")
         diff4 = game_core.get_attribute_difference(station2, station5)
-        assert diff4["district"] == False
+        assert diff4["district"] == "none"
         assert diff4["line"] == "every"
         assert diff4["year"] == -1
 
         station7 = game_core.get_station_by_name("龙华中路")
         station8 = game_core.get_station_by_name("龙阳路")
         diff5 = game_core.get_attribute_difference(station7, station8)
-        assert diff5["district"] == False
+        assert diff5["district"] == "none"
         assert diff5["line"] == "some"
         assert diff5["year"] == 1
+
+        station9 = game_core.get_station_by_name("吴中路")  # ["徐汇区", "闵行区"]
+        station10 = game_core.get_station_by_name("徐家汇")  # ["徐汇区"]
+        diff6 = game_core.get_attribute_difference(station9, station9)
+        assert diff6["district"] == "every"
+        assert diff6["line"] == "every"
+        assert diff6["year"] == 0
+        diff7 = game_core.get_attribute_difference(station9, station10)
+        assert diff7["district"] == "some"
+        assert diff7["line"] == "none"
+        assert diff7["year"] == 1
+
+        station11 = game_core.get_station_by_name("武宁路")  # ["普陀区，静安区"]
+        station12 = game_core.get_station_by_name("汉中路")  # ["静安区"]
+        diff8 = game_core.get_attribute_difference(station11, station12)
+        assert diff8["district"] == "none"
+        assert diff8["line"] == "some"
+        assert diff8["year"] == 1
 
     def test_filter_stations_by_criteria(self, game_core):
         """Test station filtering by criteria."""
@@ -229,7 +262,7 @@ class TestMetroGameCore:
         assert result1["minStations"] == 0
         assert result1["minTransfer"] == 0
         assert result1["remain"] == [target1, remaining_station1]
-        assert result1["district"] is True
+        assert result1["district"] == "every"
         assert result1["line"] == "every"
         assert result1["year"] == 0
 
@@ -243,6 +276,6 @@ class TestMetroGameCore:
         assert result2["minStations"] == 18
         assert result2["minTransfer"] == 1
         assert len(result2["remain"]) == 177
-        assert result2["district"] is False
+        assert result2["district"] == "none"
         assert result2["line"] == "none"
         assert result2["year"] == -1

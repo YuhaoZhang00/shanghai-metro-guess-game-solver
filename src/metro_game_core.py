@@ -8,12 +8,12 @@ class Station(TypedDict):
     name: str
     line: List[str]
     nearStation: List[int]
-    district: str
+    district: List[str]
     year: int
 
 
 class GuessAttributeDifference(TypedDict):
-    district: bool
+    district: str  # 'every', 'some', or 'none'
     line: str  # 'every', 'some', or 'none'
     year: int  # -1, 0, or 1
 
@@ -24,7 +24,7 @@ class GuessResult(TypedDict):
     minStations: int
     minTransfer: int
     remain: List[Station]
-    district: bool
+    district: str
     line: str
     year: int
 
@@ -35,7 +35,25 @@ class MetroGameCore:
     def __init__(self, stations_file: str = "stations.json"):
         """Initialize the game core with station data from JSON file."""
         with open(stations_file, "r", encoding="utf-8") as f:
-            self.stations: List[Station] = json.load(f)
+            raw_stations = json.load(f)
+
+        # Preprocess district data: convert string to list
+        self.stations: List[Station] = []
+        for station in raw_stations:
+            processed_station = station.copy()
+            # Split district string by English comma only
+            if isinstance(station["district"], str):
+                districts = []
+                # Split by English comma only
+                for part in station["district"].split(","):
+                    district = part.strip()
+                    if district:  # Only add non-empty districts
+                        districts.append(district)
+                processed_station["district"] = districts
+            else:
+                # If already a list (shouldn't happen with current data), keep as is
+                processed_station["district"] = station["district"]
+            self.stations.append(processed_station)
 
         # Initialize data structures
         self.stations_by_name: Dict[str, Station] = {}
@@ -158,18 +176,30 @@ class MetroGameCore:
         """Compare attributes between target and guess stations."""
         target_lines = set(target["line"])
         guess_lines = set(guess["line"])
-        intersection = target_lines & guess_lines
+        line_intersection = target_lines & guess_lines
 
         # Determine line overlap
-        if intersection == target_lines == guess_lines:
+        if line_intersection == target_lines == guess_lines:
             line_result = "every"
-        elif len(intersection) > 0:
+        elif len(line_intersection) > 0:
             line_result = "some"
         else:
             line_result = "none"
 
+        # Determine district overlap
+        target_districts = set(target["district"])
+        guess_districts = set(guess["district"])
+        district_intersection = target_districts & guess_districts
+
+        if district_intersection == target_districts == guess_districts:
+            district_result = "every"
+        elif len(district_intersection) > 0:
+            district_result = "some"
+        else:
+            district_result = "none"
+
         return {
-            "district": guess["district"] == target["district"],
+            "district": district_result,
             "line": line_result,
             "year": self._sign(target["year"] - guess["year"]),
         }
@@ -224,3 +254,14 @@ class MetroGameCore:
             "line": attribute_difference["line"],
             "year": attribute_difference["year"],
         }
+
+
+if __name__ == "__main__":
+    core = MetroGameCore()
+    unique_districts = set(
+        district for station in core.stations for district in station["district"]
+    )
+    unique_lines = set(line for station in core.stations for line in station["line"])
+    years = [station["year"] for station in core.stations]
+    min_year, max_year = min(years), max(years)
+    print(unique_districts, unique_lines, years, min_year, max_year)

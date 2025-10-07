@@ -425,11 +425,6 @@ class MetroGamePlayer:
                 print()
                 self.print_hints()
 
-                # TODO: functionalities could be added
-                # 1. HINT: list all the possible attribute values to try
-                # 2. strict remaining which also counts into min stations and min transfers
-                # 3. Suggest next best guess based on remaining stations
-
 
 def main():
     """Main function to start the interactive game."""

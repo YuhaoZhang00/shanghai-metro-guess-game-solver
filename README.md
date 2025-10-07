@@ -15,7 +15,9 @@ A Python implementation and solver for the Shanghai Metro guessing game (猜铁�
 
 ## TODO
 
-- solver
-- TODO: functionalities to be added to the player
+- functionalities to be added to the solver
+    1. guess on min stations and min transfers
+    1. next best guess
+- functionalities to be added to the player
     1. strict remaining which also counts into min stations and min transfers
     1. Suggest next best guess based on remaining stations

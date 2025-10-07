@@ -5,6 +5,78 @@ except ImportError:
 from typing import List
 import unicodedata
 
+# hardcoded all possible attribute values for hints
+# these values should be updated if stations.json is updated
+# by calling __main__ function in metro_game_core.py
+all_possible_districts = [
+    "嘉定区",
+    "奉贤区",
+    "宝山区",
+    "徐汇区",
+    "昆山市",
+    "普陀区",
+    "普陀区，静安区",
+    "杨浦区",
+    "松江区",
+    "浦东新区",
+    "虹口区",
+    "长宁区",
+    "闵行区",
+    "青浦区",
+    "静安区",
+    "静安区，虹口区",
+    "黄浦区",
+]
+all_possible_lines = [
+    "1号线",
+    "2号线",
+    "3号线",
+    "4号线",
+    "5号线",
+    "6号线",
+    "7号线",
+    "8号线",
+    "9号线",
+    "10号线",
+    "11号线",
+    "12号线",
+    "13号线",
+    "14号线",
+    "15号线",
+    "16号线",
+    "17号线",
+    "18号线",
+    "浦江线",
+    "磁悬浮",
+    "机场联络线",
+]
+all_possible_years = [
+    1993,
+    1995,
+    1996,
+    1999,
+    2000,
+    2003,
+    2004,
+    2005,
+    2006,
+    2007,
+    2009,
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2024,
+]
+
 
 def get_display_width(text: str) -> int:
     """Calculate the display width of a string, accounting for wide characters like Chinese."""
@@ -58,6 +130,15 @@ class MetroGamePlayer:
         self.target_station: Station = None
         self.remaining_stations: List[Station] = []
         self.guess_count = 0
+        # Hint variables to track possible attribute values
+        self.possible_districts_guessed: List[str] = []
+        self.possible_districts_not_tried: List[str] = []
+        self.possible_lines_guessed: List[str] = []
+        self.possible_lines_not_tried: List[str] = []
+        self.possible_years: List[int] = []
+        # Flags to track if we've found the exact answer
+        self.districts_exact_match_found: bool = False
+        self.lines_exact_match_found: bool = False
         self.reset_game()
 
     def reset_game(self) -> None:
@@ -65,6 +146,15 @@ class MetroGamePlayer:
         self.target_station = self.game_core.get_random_station()
         self.remaining_stations = self.game_core.stations.copy()
         self.guess_count = 0
+        # Reset hint variables to all possible values
+        self.possible_districts_guessed = []
+        self.possible_districts_not_tried = all_possible_districts.copy()
+        self.possible_lines_guessed = []
+        self.possible_lines_not_tried = all_possible_lines.copy()
+        self.possible_years = all_possible_years.copy()
+        # Reset exact match flags
+        self.districts_exact_match_found = False
+        self.lines_exact_match_found = False
 
     # def set_target(self, station_name: str) -> bool:
     #     """Set a specific station as the target."""
@@ -94,17 +184,133 @@ class MetroGamePlayer:
         # Update remaining stations
         self.remaining_stations = result["remain"]
 
+        # Update hint variables based on the guess result
+        self._update_hints(guess_station, result)
+
         return {"valid_guess": True, "guess_number": self.guess_count, **result}
+
+    def _update_hints(self, guess_station: Station, result: dict) -> None:
+        """Update hint variables based on the guess result."""
+        if result["district"] == "every":
+            # Target has exactly the same districts as the guess
+            self.possible_districts_not_tried = []
+            self.possible_districts_guessed = guess_station["district"].copy()
+            self.districts_exact_match_found = True
+        elif result["district"] == "some":
+            if not self.districts_exact_match_found:
+                # Move guessed districts from not_tried to guessed only if we haven't found exact match
+                guess_districts = set(guess_station["district"])
+                self.possible_districts_not_tried = [
+                    d
+                    for d in self.possible_districts_not_tried
+                    if d not in guess_districts
+                ]
+                for district in guess_station["district"]:
+                    if district not in self.possible_districts_guessed:
+                        self.possible_districts_guessed.append(district)
+            # else, if exact match already found, no need to manipulate possible lists
+        elif result["district"] == "none":
+            # Target shares no districts with the guess
+            if not self.districts_exact_match_found:
+                guess_districts = set(guess_station["district"])
+                self.possible_districts_guessed = [
+                    d
+                    for d in self.possible_districts_guessed
+                    if d not in guess_districts
+                ]
+                self.possible_districts_not_tried = [
+                    d
+                    for d in self.possible_districts_not_tried
+                    if d not in guess_districts
+                ]
+            # else, if exact match already found, no need to manipulate possible lists
+
+        # Update possible lines based on line match result
+        if result["line"] == "every":
+            # Target has exactly the same lines as the guess
+            self.possible_lines_not_tried = []
+            self.possible_lines_guessed = guess_station["line"].copy()
+            self.lines_exact_match_found = True
+        elif result["line"] == "some":
+            if not self.lines_exact_match_found:
+                # Move guessed lines from not_tried to guessed only if we haven't found exact match
+                guess_lines = set(guess_station["line"])
+                self.possible_lines_not_tried = [
+                    l for l in self.possible_lines_not_tried if l not in guess_lines
+                ]
+                for line in guess_station["line"]:
+                    if line not in self.possible_lines_guessed:
+                        self.possible_lines_guessed.append(line)
+            # else, if exact match already found, no need to manipulate possible lists
+        elif result["line"] == "none":
+            # Target shares no lines with the guess
+            if not self.lines_exact_match_found:
+                guess_lines = set(guess_station["line"])
+                self.possible_lines_guessed = [
+                    l for l in self.possible_lines_guessed if l not in guess_lines
+                ]
+                self.possible_lines_not_tried = [
+                    l for l in self.possible_lines_not_tried if l not in guess_lines
+                ]
+            # else, if exact match already found, no need to manipulate possible lists
+
+        # Update possible years based on year comparison result
+        if result["year"] == 0:
+            # Target has the same year as the guess
+            self.possible_years = [guess_station["year"]]
+        elif result["year"] == 1:
+            # Target year is greater than guess year
+            self.possible_years = [
+                y for y in self.possible_years if y > guess_station["year"]
+            ]
+        elif result["year"] == -1:
+            # Target year is less than guess year
+            self.possible_years = [
+                y for y in self.possible_years if y < guess_station["year"]
+            ]
 
     # def get_remaining_station_names(self) -> List[str]:
     #     """Get names of all remaining possible stations."""
     #     return [station["name"] for station in self.remaining_stations]
 
+    def print_hints(self) -> None:
+        """Print hints showing possible attribute values."""
+        print("💡 Hints - Possible attribute values:")
+        total_districts = len(self.possible_districts_guessed) + len(
+            self.possible_districts_not_tried
+        )
+        total_lines = len(self.possible_lines_guessed) + len(
+            self.possible_lines_not_tried
+        )
+
+        # Format districts with guessed ones in brackets
+        districts_display = ""
+        if self.possible_districts_guessed:
+            districts_display += f"[{', '.join(self.possible_districts_guessed)}] "
+        districts_display += ", ".join(self.possible_districts_not_tried)
+        print(f"📍 Districts ({total_districts}): {districts_display}")
+
+        # Format lines with guessed ones in brackets
+        lines_display = ""
+        if self.possible_lines_guessed:
+            lines_display += f"[{', '.join(self.possible_lines_guessed)}] "
+        lines_display += ", ".join(self.possible_lines_not_tried)
+        print(f"🚇 Lines ({total_lines}): {lines_display}")
+
+        years_display = (
+            f"[{self.possible_years[0]}]"
+            if len(self.possible_years) == 1
+            else f"{', '.join(map(str, self.possible_years))}"
+        )
+        print(f"📅 Years ({len(self.possible_years)}): {years_display}")
+
     def play_interactive(self) -> None:
         """Start an interactive game session."""
         print("🚇 Welcome to Shanghai Metro Guess Game!")
         print(f"Target station set. Try to guess it!")
+        print()
         print(f"Total stations: {len(self.game_core.stations)}")
+        self.print_hints()
         print()
 
         while True:
@@ -204,11 +410,20 @@ class MetroGamePlayer:
                 print("└─────────────────┴──────────────────┘")
 
                 # Remaining stations count and list
-                print(f"🎯 Remaining (attributes): {len(result['remain'])} stations")
+                print(
+                    f"🎯 Remaining stations (attributes matching): {len(result['remain'])}"
+                )
 
                 if len(result["remain"]) <= 10:
-                    remaining_names = [s["name"] for s in result["remain"]]
+                    remaining_names = [
+                        f"{s['name']} ({', '.join(s['line'])} | {', '.join(s['district'])})"
+                        for s in result["remain"]
+                    ]
                     print(f"   {', '.join(remaining_names)}")
+
+                # Display hints for possible attribute values
+                print()
+                self.print_hints()
 
                 # TODO: functionalities could be added
                 # 1. HINT: list all the possible attribute values to try

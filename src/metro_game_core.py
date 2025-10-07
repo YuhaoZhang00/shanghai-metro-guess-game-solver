@@ -258,10 +258,18 @@ class MetroGameCore:
 
 if __name__ == "__main__":
     core = MetroGameCore()
-    unique_districts = set(
-        district for station in core.stations for district in station["district"]
+    unique_districts = sorted(
+        list(
+            set(
+                district
+                for station in core.stations
+                for district in station["district"]
+            )
+        )
     )
-    unique_lines = set(line for station in core.stations for line in station["line"])
-    years = [station["year"] for station in core.stations]
+    unique_lines = sorted(
+        list(set(line for station in core.stations for line in station["line"]))
+    )
+    years = sorted(list(set(station["year"] for station in core.stations)))
     min_year, max_year = min(years), max(years)
     print(unique_districts, unique_lines, years, min_year, max_year)

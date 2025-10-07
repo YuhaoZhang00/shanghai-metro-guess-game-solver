@@ -1,3 +1,35 @@
+#!/usr/bin/env python3
+"""
+Metro Game Player - Interactive guessing game for Shanghai Metro stations
+
+A guessing game where you try to identify a mystery Shanghai Metro station
+by making guesses and receiving feedback about station attributes.
+
+Usage:
+    python metro_game_player.py
+
+Game Rules:
+- You'll be given a mystery station to guess
+- For each guess, you'll receive feedback on:
+  - District match: ✅ (exact), 🟡 (partial), ❌ (none)
+  - Line match: ✅ (exact), 🟡 (partial), ❌ (none)
+  - Year match: 🟰 (same), ⬆️ (target newer), ⬇️ (target older)
+- Distance information shows minimum stations and transfers to reach target
+- Use hints to narrow down possible attribute values
+
+Input format (one per line):
+    station_name
+
+Where:
+    - station_name: Name of the guessed station
+
+Example:
+    航头
+    徐家汇
+
+Type 'quit' to stop.
+"""
+
 try:
     from .metro_game_core import MetroGameCore, Station
 except ImportError:
@@ -307,14 +339,15 @@ class MetroGamePlayer:
     def play_interactive(self) -> None:
         """Start an interactive game session."""
         print("🚇 Welcome to Shanghai Metro Guess Game!")
+        print()
         print(f"Target station set. Try to guess it!")
         print()
         print(f"Total stations: {len(self.game_core.stations)}")
         self.print_hints()
-        print()
 
         while True:
             remaining_count = len(self.remaining_stations)
+            print()
             print("========================================")
             print(f"Remaining possible stations: {remaining_count}")
 

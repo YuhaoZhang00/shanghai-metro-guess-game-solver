@@ -4,8 +4,9 @@ A Python implementation and solver for the Shanghai Metro guessing game (猜铁�
 
 ## Usage
 
-**Play the game:** `python src/metro_game_player.py`  
-**Run tests:** `python -m pytest`
+- **Play the game:** `python src/metro_game_player.py`
+- **solver:** `python src/metro_game_solver.py`
+- **Run tests:** `python -m pytest`
 
 ## Original Game
 

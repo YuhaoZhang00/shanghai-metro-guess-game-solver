@@ -11,10 +11,12 @@ from .metro_game_core import (
     GuessAttributeDifference,
 )
 from .metro_game_player import MetroGamePlayer
+from .metro_game_solver import MetroGameSolver
 
 __all__ = [
     "MetroGameCore",
-    "MetroGamePlayer",
+    "MetroGamePlayer", 
+    "MetroGameSolver",
     "Station",
     "GuessResult",
     "GuessAttributeDifference",

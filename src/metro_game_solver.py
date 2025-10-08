@@ -13,13 +13,13 @@ Input format (one per line):
 
 Where:
     - station_name: Name of the guessed station
-    - district_match: 'every', 'some', or 'none'
-    - line_match: 'every', 'some', or 'none'
+    - district_match: 2 (every), 1 (some), or 0 (none)
+    - line_match: 2 (every), 1 (some), or 0 (none)
     - year_match: -1 (target < guess), 0 (target = guess), or 1 (target > guess)
 
 Example:
-    航头 every every 0
-    徐家汇 some none 1
+    航头 2 2 0
+    徐家汇 1 0 1
 
 Type 'quit' to stop.
 """
@@ -42,21 +42,26 @@ class MetroGameSolver:
         self.possible_stations: List[Station] = self.game_core.stations.copy()
         self.guess_history: List[dict] = []
 
+    def _convert_numeric_to_text(self, numeric_match: int) -> str:
+        """Convert numeric match value to text representation."""
+        mapping = {2: "every", 1: "some", 0: "none"}
+        return mapping.get(numeric_match, "none")
+
     def reset_solver(self) -> None:
         """Reset the solver to start fresh."""
         self.possible_stations = self.game_core.stations.copy()
         self.guess_history = []
 
     def apply_constraint(
-        self, guess_name: str, district_match: str, line_match: str, year_match: int
+        self, guess_name: str, district_match: int, line_match: int, year_match: int
     ) -> Optional[List[Station]]:
         """
         Apply a constraint based on a guess and its attribute matches.
 
         Args:
             guess_name: Name of the guessed station
-            district_match: 'every', 'some', or 'none'
-            line_match: 'every', 'some', or 'none'
+            district_match: 2 (every), 1 (some), or 0 (none)
+            line_match: 2 (every), 1 (some), or 0 (none)
             year_match: -1, 0, or 1
 
         Returns:
@@ -67,10 +72,14 @@ class MetroGameSolver:
         if not guess_station:
             return None
 
+        # Convert numeric input to text format for game core
+        district_text = self._convert_numeric_to_text(district_match)
+        line_text = self._convert_numeric_to_text(line_match)
+
         # Create the target difference pattern
         target_diff: GuessAttributeDifference = {
-            "district": district_match,
-            "line": line_match,
+            "district": district_text,
+            "line": line_text,
             "year": year_match,
         }
 
@@ -128,10 +137,15 @@ class MetroGameSolver:
         print("📊 Guess History:")
         print("----------------------------------------")
         for i, guess in enumerate(self.guess_history, 1):
+            # Convert back to readable format for display
+            district_display = f"{guess['district']} ({self._convert_numeric_to_text(guess['district'])})"
+            line_display = (
+                f"{guess['line']} ({self._convert_numeric_to_text(guess['line'])})"
+            )
             print(
                 f"{i}. {guess['guess']} -> "
-                f"District: {guess['district']}, "
-                f"Line: {guess['line']}, "
+                f"District: {district_display}, "
+                f"Line: {line_display}, "
                 f"Year: {guess['year']} "
                 f"({guess['remaining_count']} remaining)"
             )
@@ -148,12 +162,21 @@ class MetroGameSolver:
         if len(parts) != 4:
             return None
 
-        station_name, district_match, line_match, year_match_str = parts
+        station_name, district_match_str, line_match_str, year_match_str = parts
 
-        # Validate district and line match values
-        if district_match not in ["every", "some", "none"]:
+        # Validate and convert district and line match values
+        try:
+            district_match = int(district_match_str)
+            if district_match not in [0, 1, 2]:
+                return None
+        except ValueError:
             return None
-        if line_match not in ["every", "some", "none"]:
+
+        try:
+            line_match = int(line_match_str)
+            if line_match not in [0, 1, 2]:
+                return None
+        except ValueError:
             return None
 
         # Validate and convert year match
@@ -170,10 +193,16 @@ class MetroGameSolver:
         """Print help information."""
         print("\nInput format:")
         print("  <station_name> <district_match> <line_match> <year_match>")
+        print("\nMatch values:")
+        print("  district_match: 2 (every), 1 (some), 0 (none)")
+        print("  line_match: 2 (every), 1 (some), 0 (none)")
+        print(
+            "  year_match: -1 (target < guess), 0 (target = guess), 1 (target > guess)"
+        )
         print("\nExample inputs:")
-        print("  航头 every every 0")
-        print("  徐家汇 some none 1")
-        print("  人民广场 none some -1")
+        print("  航头 2 2 0")
+        print("  徐家汇 1 0 1")
+        print("  人民广场 0 1 -1")
 
     def solve_interactive(self) -> None:
         """Start an interactive solving session."""
